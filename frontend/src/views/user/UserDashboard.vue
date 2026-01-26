@@ -4,7 +4,7 @@
       <!-- 侧边栏 -->
       <el-aside width="200px" class="sidebar">
         <div class="logo">
-          <h3>业主中心</h3>
+          <h3>🌲 森林家园</h3>
         </div>
         <el-menu
           :default-active="activeMenu"
@@ -55,7 +55,7 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#409eff"><Money /></el-icon>
+                    <el-icon size="30" color="#2E7D32"><Money /></el-icon>
                   </div>
                   <div class="stat-info">
                     <div class="stat-value">￥2,580</div>
@@ -66,7 +66,7 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#67c23a"><CircleCheck /></el-icon>
+                    <el-icon size="30" color="#4CAF50"><CircleCheck /></el-icon>
                   </div>
                   <div class="stat-info">
                     <div class="stat-value">5</div>
@@ -77,7 +77,7 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#e6a23c"><Clock /></el-icon>
+                    <el-icon size="30" color="#FFB74D"><Clock /></el-icon>
                   </div>
                   <div class="stat-info">
                     <div class="stat-value">2</div>
@@ -88,7 +88,7 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#f56c6c"><Bell /></el-icon>
+                    <el-icon size="30" color="#EF5350"><Bell /></el-icon>
                   </div>
                   <div class="stat-info">
                     <div class="stat-value">3</div>
@@ -138,7 +138,86 @@
             </el-card>
           </div>
 
-          <!-- 其他内容区域可以继续添加 -->
+          <!-- 缴费记录 -->
+          <div v-else-if="activeMenu === 'payments'" class="payments-content">
+            <el-table :data="payments" style="width: 100%">
+              <el-table-column prop="paymentMonth" label="月份" width="100" />
+              <el-table-column prop="paymentType" label="类型" width="100">
+                <template #default="{ row }">
+                  {{ getPaymentTypeText(row.paymentType) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="shouldPayAmount" label="应缴(元)" width="100" />
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === 1 ? 'success' : 'warning'">
+                    {{ row.status === 1 ? '已缴' : '未缴' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="100">
+                <template #default="{ row }">
+                  <el-button v-if="row.status === 0" size="small" type="primary" @click="payBill(row)">缴费</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 报修申请 -->
+          <div v-else-if="activeMenu === 'repairs'" class="repairs-content">
+            <div class="toolbar">
+              <el-button type="primary" @click="showRepairDialog = true">提交报修</el-button>
+            </div>
+            <el-table :data="repairs" style="width: 100%">
+              <el-table-column prop="description" label="问题描述" />
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="提交时间" width="160">
+                <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
+              </el-table-column>
+            </el-table>
+            <el-dialog v-model="showRepairDialog" title="提交报修" width="500px">
+              <el-form :model="repairForm" label-width="80px">
+                <el-form-item label="类型">
+                  <el-select v-model="repairForm.repairType">
+                    <el-option label="水电" :value="1" />
+                    <el-option label="门窗" :value="2" />
+                    <el-option label="电梯" :value="3" />
+                    <el-option label="公共" :value="4" />
+                    <el-option label="其他" :value="5" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="描述">
+                  <el-input v-model="repairForm.description" type="textarea" rows="3" />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <el-button @click="showRepairDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitRepair">提交</el-button>
+              </template>
+            </el-dialog>
+          </div>
+
+          <!-- 个人信息 -->
+          <div v-else-if="activeMenu === 'profile'" class="profile-content">
+            <el-card>
+              <el-form label-width="100px">
+                <el-form-item label="用户名">
+                  <el-input :value="user?.username" disabled />
+                </el-form-item>
+                <el-form-item label="姓名">
+                  <el-input :value="user?.realName" disabled />
+                </el-form-item>
+                <el-form-item label="电话">
+                  <el-input :value="user?.phone" disabled />
+                </el-form-item>
+              </el-form>
+            </el-card>
+          </div>
+
           <div v-else class="coming-soon">
             <el-result icon="info" title="功能开发中" sub-title="该功能正在开发中，敬请期待">
             </el-result>
@@ -168,6 +247,13 @@ export default {
     const activeMenu = ref('home')
     const user = ref(JSON.parse(localStorage.getItem('user')))
     const notices = ref([])
+    const payments = ref([])
+    const repairs = ref([])
+    const showRepairDialog = ref(false)
+    const repairForm = reactive({
+      repairType: 1,
+      description: ''
+    })
 
     const getPageTitle = () => {
       const titles = {
@@ -205,18 +291,95 @@ export default {
       return new Date(timeStr).toLocaleString()
     }
 
+    const getPaymentTypeText = (type) => {
+      const types = { 1: '物业费', 2: '停车费', 3: '水费', 4: '电费', 5: '燃气费' }
+      return types[type] || '其他'
+    }
+
+    const getStatusType = (status) => {
+      const types = { 0: 'danger', 1: 'warning', 2: 'success' }
+      return types[status] || ''
+    }
+
+    const getStatusText = (status) => {
+      const texts = { 0: '待处理', 1: '处理中', 2: '已完成' }
+      return texts[status] || '未知'
+    }
+
+    const loadPayments = async () => {
+      if (!user.value?.id) return
+      try {
+        const response = await axios.get(`/api/payment/owner/${user.value.id}`)
+        if (response.data.code === 200) {
+          payments.value = response.data.data
+        }
+      } catch (error) {
+        console.error('获取缴费失败:', error)
+      }
+    }
+
+    const loadRepairs = async () => {
+      if (!user.value?.id) return
+      try {
+        const response = await axios.get(`/api/repair/applicant/${user.value.id}`)
+        if (response.data.code === 200) {
+          repairs.value = response.data.data
+        }
+      } catch (error) {
+        console.error('获取报修失败:', error)
+      }
+    }
+
+    const payBill = async (row) => {
+      try {
+        await axios.put(`/api/payment/${row.id}/pay`, { amount: row.shouldPayAmount })
+        ElMessage.success('缴费成功')
+        await loadPayments()
+      } catch (error) {
+        ElMessage.error('缴费失败')
+      }
+    }
+
+    const submitRepair = async () => {
+      try {
+        await axios.post('/api/repair/submit', {
+          ...repairForm,
+          applicantId: user.value.id,
+          applicantName: user.value.realName,
+          applicantPhone: user.value.phone
+        })
+        ElMessage.success('提交成功')
+        showRepairDialog.value = false
+        repairForm.description = ''
+        await loadRepairs()
+      } catch (error) {
+        ElMessage.error('提交失败')
+      }
+    }
+
     onMounted(() => {
       loadNotices()
+      loadPayments()
+      loadRepairs()
     })
 
     return {
       activeMenu,
       user,
       notices,
+      payments,
+      repairs,
+      showRepairDialog,
+      repairForm,
       getPageTitle,
       handleMenuSelect,
       logout,
-      formatTime
+      formatTime,
+      getPaymentTypeText,
+      getStatusType,
+      getStatusText,
+      payBill,
+      submitRepair
     }
   }
 }

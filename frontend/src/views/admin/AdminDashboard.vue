@@ -4,7 +4,7 @@
       <!-- 侧边栏 -->
       <el-aside width="200px" class="sidebar">
         <div class="logo">
-          <h3>管理中心</h3>
+          <h3>🌲 森林家园</h3>
         </div>
         <el-menu
           :default-active="activeMenu"
@@ -59,10 +59,10 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#409eff"><User /></el-icon>
+                    <el-icon size="30" color="#2E7D32"><User /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <div class="stat-value">1,258</div>
+                    <div class="stat-value">{{ stats.userCount }}</div>
                     <div class="stat-label">总用户数</div>
                   </div>
                 </el-card>
@@ -70,10 +70,10 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#67c23a"><House /></el-icon>
+                    <el-icon size="30" color="#4CAF50"><House /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <div class="stat-value">368</div>
+                    <div class="stat-value">{{ stats.houseCount }}</div>
                     <div class="stat-label">房屋总数</div>
                   </div>
                 </el-card>
@@ -81,10 +81,10 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#e6a23c"><Money /></el-icon>
+                    <el-icon size="30" color="#FFB74D"><Money /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <div class="stat-value">￥68,520</div>
+                    <div class="stat-value">￥{{ stats.monthIncome }}</div>
                     <div class="stat-label">本月收入</div>
                   </div>
                 </el-card>
@@ -92,10 +92,10 @@
               <el-col :span="6">
                 <el-card class="stat-card">
                   <div class="stat-icon">
-                    <el-icon size="30" color="#f56c6c"><Tools /></el-icon>
+                    <el-icon size="30" color="#EF5350"><Tools /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <div class="stat-value">12</div>
+                    <div class="stat-value">{{ stats.pendingRepairs }}</div>
                     <div class="stat-label">待处理报修</div>
                   </div>
                 </el-card>
@@ -208,7 +208,104 @@
             </el-dialog>
           </div>
 
-          <!-- 其他内容区域 -->
+          <!-- 用户管理 -->
+          <div v-else-if="activeMenu === 'users'" class="users-management">
+            <div class="toolbar">
+              <el-input v-model="userSearch" placeholder="搜索用户" style="width: 200px" />
+              <el-button type="primary" @click="loadUsers">搜索</el-button>
+            </div>
+            <el-table :data="users" style="width: 100%">
+              <el-table-column prop="username" label="用户名" width="120" />
+              <el-table-column prop="realName" label="姓名" width="100" />
+              <el-table-column prop="phone" label="电话" width="130" />
+              <el-table-column prop="userType" label="角色" width="80">
+                <template #default="{ row }">
+                  <el-tag :type="row.userType === 0 ? 'danger' : ''">
+                    {{ row.userType === 0 ? '管理员' : '业主' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === 1 ? 'success' : 'info'">
+                    {{ row.status === 1 ? '正常' : '禁用' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="{ row }">
+                  <el-button size="small" @click="viewUser(row)">查看</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 房屋管理 -->
+          <div v-else-if="activeMenu === 'houses'" class="houses-management">
+            <div class="toolbar">
+              <el-button type="primary" @click="showHouseDialog = true">
+                <el-icon><Plus /></el-icon>新增房屋
+              </el-button>
+            </div>
+            <el-table :data="houses" style="width: 100%">
+              <el-table-column prop="buildingNo" label="楼栋" width="80" />
+              <el-table-column prop="unitNo" label="单元" width="80" />
+              <el-table-column prop="roomNo" label="房号" width="80" />
+              <el-table-column prop="area" label="面积(㎡)" width="100" />
+              <el-table-column prop="ownerName" label="业主" width="100" />
+              <el-table-column prop="ownerPhone" label="电话" width="130" />
+              <el-table-column label="操作" width="150">
+                <template #default="{ row }">
+                  <el-button size="small" @click="editHouse(row)">编辑</el-button>
+                  <el-button size="small" type="danger" @click="deleteHouse(row.id)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 报修管理 -->
+          <div v-else-if="activeMenu === 'repairs'" class="repairs-management">
+            <el-table :data="repairs" style="width: 100%">
+              <el-table-column prop="applicantName" label="申请人" width="100" />
+              <el-table-column prop="applicantPhone" label="电话" width="130" />
+              <el-table-column prop="description" label="问题描述" />
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="getStatusType(row.status)">
+                    {{ getStatusText(row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="150">
+                <template #default="{ row }">
+                  <el-button v-if="row.status === 0" size="small" type="primary" @click="handleRepair(row)">处理</el-button>
+                  <el-button v-if="row.status === 1" size="small" type="success" @click="completeRepair(row)">完成</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 缴费管理 -->
+          <div v-else-if="activeMenu === 'payments'" class="payments-management">
+            <el-table :data="payments" style="width: 100%">
+              <el-table-column prop="paymentMonth" label="月份" width="100" />
+              <el-table-column prop="paymentType" label="类型" width="100">
+                <template #default="{ row }">
+                  {{ getPaymentTypeText(row.paymentType) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="shouldPayAmount" label="应缴(元)" width="100" />
+              <el-table-column prop="actualPayAmount" label="实缴(元)" width="100" />
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === 1 ? 'success' : 'warning'">
+                    {{ row.status === 1 ? '已缴' : '未缴' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
           <div v-else class="coming-soon">
             <el-result icon="info" title="功能开发中" sub-title="该功能正在开发中，敬请期待">
             </el-result>
@@ -244,6 +341,18 @@ export default {
       { applicantName: '王先生', description: '门锁损坏', status: 2 }
     ])
     const showNoticeDialog = ref(false)
+    const users = ref([])
+    const houses = ref([])
+    const repairs = ref([])
+    const payments = ref([])
+    const userSearch = ref('')
+    const showHouseDialog = ref(false)
+    const stats = reactive({
+      userCount: 0,
+      houseCount: 0,
+      monthIncome: '0',
+      pendingRepairs: 0
+    })
     
     const noticeForm = reactive({
       title: '',
@@ -357,8 +466,103 @@ export default {
       return new Date(timeStr).toLocaleString()
     }
 
+    const getPaymentTypeText = (type) => {
+      const types = { 1: '物业费', 2: '停车费', 3: '水费', 4: '电费', 5: '燃气费' }
+      return types[type] || '其他'
+    }
+
+    const loadUsers = async () => {
+      try {
+        const response = await axios.get('/api/user/list')
+        if (response.data.code === 200) {
+          users.value = response.data.data
+        }
+      } catch (error) {
+        console.error('获取用户失败:', error)
+      }
+    }
+
+    const loadHouses = async () => {
+      try {
+        const response = await axios.get('/api/house/list')
+        if (response.data.code === 200) {
+          houses.value = response.data.data
+        }
+      } catch (error) {
+        console.error('获取房屋失败:', error)
+      }
+    }
+
+    const loadRepairs = async () => {
+      try {
+        const response = await axios.get('/api/repair/list')
+        if (response.data.code === 200) {
+          repairs.value = response.data.data
+        }
+      } catch (error) {
+        console.error('获取报修失败:', error)
+      }
+    }
+
+    const loadPayments = async () => {
+      try {
+        const response = await axios.get('/api/payment/list')
+        if (response.data.code === 200) {
+          payments.value = response.data.data
+        }
+      } catch (error) {
+        console.error('获取缴费失败:', error)
+      }
+    }
+
+    const viewUser = (row) => {
+      ElMessage.info(`查看用户: ${row.realName}`)
+    }
+
+    const editHouse = (row) => {
+      ElMessage.info(`编辑房屋: ${row.buildingNo}-${row.unitNo}-${row.roomNo}`)
+    }
+
+    const deleteHouse = async (id) => {
+      try {
+        await ElMessageBox.confirm('确定删除?', '提示')
+        await axios.delete(`/api/house/${id}`)
+        ElMessage.success('删除成功')
+        await loadHouses()
+      } catch (error) {
+        if (error !== 'cancel') ElMessage.error('删除失败')
+      }
+    }
+
+    const handleRepair = async (row) => {
+      try {
+        await axios.put(`/api/repair/${row.id}/handle`, {
+          handlerId: user.value.id,
+          handlerName: user.value.realName,
+          remark: '已开始处理'
+        })
+        ElMessage.success('已开始处理')
+        await loadRepairs()
+      } catch (error) {
+        ElMessage.error('操作失败')
+      }
+    }
+
+    const completeRepair = async (row) => {
+      try {
+        await axios.put(`/api/repair/${row.id}/complete`, { remark: '已完成' })
+        ElMessage.success('已完成')
+        await loadRepairs()
+      } catch (error) {
+        ElMessage.error('操作失败')
+      }
+    }
+
     onMounted(() => {
       loadNotices()
+      loadHouses()
+      loadRepairs()
+      loadPayments()
     })
 
     return {
@@ -368,6 +572,13 @@ export default {
       recentRepairs,
       showNoticeDialog,
       noticeForm,
+      users,
+      houses,
+      repairs,
+      payments,
+      userSearch,
+      showHouseDialog,
+      stats,
       getPageTitle,
       handleMenuSelect,
       logout,
@@ -377,7 +588,17 @@ export default {
       getStatusType,
       getStatusText,
       getNoticeTypeText,
-      formatTime
+      getPaymentTypeText,
+      formatTime,
+      loadUsers,
+      loadHouses,
+      loadRepairs,
+      loadPayments,
+      viewUser,
+      editHouse,
+      deleteHouse,
+      handleRepair,
+      completeRepair
     }
   }
 }

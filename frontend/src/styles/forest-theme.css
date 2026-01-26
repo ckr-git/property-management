@@ -1,0 +1,108 @@
+/* 森林家园主题样式 */
+
+/* 覆盖 Element Plus 主题色 */
+:root {
+  --el-color-primary: var(--forest-green);
+  --el-color-primary-light-3: var(--forest-green-light);
+  --el-color-primary-light-5: var(--forest-green-pale);
+  --el-color-primary-dark-2: var(--forest-green-dark);
+  --el-color-success: var(--success);
+  --el-color-warning: var(--warning);
+  --el-color-danger: var(--danger);
+  --el-color-info: var(--info);
+}
+
+/* 侧边栏样式 */
+.sidebar {
+  background: var(--bg-sidebar) !important;
+}
+
+.sidebar .logo {
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar .logo h3 {
+  color: var(--text-white) !important;
+  font-size: 18px;
+}
+
+/* 侧边栏菜单 */
+.sidebar .el-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.sidebar .el-menu-item {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.3s;
+}
+
+.sidebar .el-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-white) !important;
+}
+
+.sidebar .el-menu-item.is-active {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-white) !important;
+  border-left: 3px solid var(--forest-green-pale);
+}
+
+/* 主内容区背景 */
+.main-content {
+  background: var(--bg-main) !important;
+}
+
+/* 卡片样式 */
+.el-card {
+  border-radius: var(--radius-md) !important;
+  border: none !important;
+  box-shadow: var(--shadow-light) !important;
+  transition: all 0.3s;
+}
+
+.el-card:hover {
+  box-shadow: var(--shadow-hover) !important;
+  transform: translateY(-2px);
+}
+
+/* 按钮样式 */
+.el-button--primary {
+  background: linear-gradient(135deg, var(--forest-green) 0%, var(--forest-green-light) 100%) !important;
+  border: none !important;
+}
+
+.el-button--success {
+  background: var(--success) !important;
+  border: none !important;
+}
+
+.el-button--warning {
+  background: var(--warning) !important;
+  border: none !important;
+}
+
+.el-button--danger {
+  background: var(--danger) !important;
+  border: none !important;
+}
+
+/* 统计卡片 */
+.stat-card {
+  border-radius: var(--radius-md) !important;
+}
+
+.stat-value {
+  color: var(--text-primary) !important;
+}
+
+.stat-label {
+  color: var(--text-light) !important;
+}
+
+/* 表格样式 */
+.el-table th {
+  background: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}

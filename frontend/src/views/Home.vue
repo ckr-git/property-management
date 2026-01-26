@@ -4,7 +4,7 @@
       <!-- 头部导航 -->
       <el-header class="header">
         <div class="logo">
-          <h1>小区物业管理系统</h1>
+          <h1>🌲 森林家园</h1>
         </div>
         <div class="nav-buttons">
           <el-button @click="$router.push('/login')">登录</el-button>
@@ -19,8 +19,8 @@
           <el-carousel height="300px">
             <el-carousel-item>
               <div class="banner-item">
-                <h2>欢迎使用小区物业管理系统</h2>
-                <p>为您提供便民的物业服务</p>
+                <h2>欢迎回到森林家园</h2>
+                <p>绿色生活，温馨家园</p>
               </div>
             </el-carousel-item>
             <el-carousel-item>
@@ -146,7 +146,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
   color: white;
   padding: 0 20px;
 }
@@ -163,7 +163,7 @@ export default {
 .banner-item {
   text-align: center;
   padding: 80px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%);
   color: white;
 }
 
@@ -193,7 +193,7 @@ export default {
 }
 
 .feature-icon {
-  color: #409eff;
+  color: #2E7D32;
   margin-bottom: 15px;
 }
 

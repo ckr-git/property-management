@@ -1,3 +1,12 @@
 target/
 node_modules/
 *.log
+.idea/
+*.iml
+.vscode/
+dist/
+test-results/
+playwright-report/
+.env
+*.tmp
+*.sql.bak

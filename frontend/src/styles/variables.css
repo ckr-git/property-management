@@ -1,0 +1,39 @@
+:root {
+  /* 森林绿主色调 */
+  --forest-green-dark: #1B5E20;
+  --forest-green: #2E7D32;
+  --forest-green-light: #4CAF50;
+  --forest-green-pale: #81C784;
+
+  /* 木质棕辅助色 */
+  --wood-brown-dark: #5D4037;
+  --wood-brown: #795548;
+  --wood-brown-light: #A1887F;
+
+  /* 功能色 */
+  --success: #66BB6A;
+  --warning: #FFB74D;
+  --danger: #EF5350;
+  --info: #4FC3F7;
+
+  /* 背景色 */
+  --bg-main: #F1F8E9;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: linear-gradient(180deg, #1B5E20 0%, #2E7D32 100%);
+
+  /* 文字色 */
+  --text-primary: #5D4037;
+  --text-secondary: #795548;
+  --text-light: #A1887F;
+  --text-white: #FFFFFF;
+
+  /* 边框和阴影 */
+  --border-color: #E8F5E9;
+  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 4px 16px rgba(46, 125, 50, 0.15);
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
