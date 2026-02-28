@@ -31,5 +31,14 @@ public interface UserService extends IService<User> {
      * @return 用户信息
      */
     User getUserByUsername(String username);
-    
+
+    /**
+     * 修改密码
+     * @param userId 用户ID
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return 是否修改成功
+     */
+    boolean changePassword(Long userId, String oldPassword, String newPassword);
+
 }

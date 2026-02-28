@@ -1,9 +1,13 @@
 package com.community.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.common.Result;
 import com.community.entity.House;
 import com.community.service.HouseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,9 +29,20 @@ public class HouseController {
      * 获取所有房屋列表
      */
     @GetMapping("/list")
-    public Result<List<House>> getHouseList() {
-        List<House> houses = houseService.list();
-        return Result.success(houses);
+    public Result<IPage<House>> getHouseList(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword) {
+        Page<House> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<House> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(House::getBuildingNo, keyword)
+                    .or().like(House::getRoomNo, keyword)
+                    .or().like(House::getOwnerName, keyword)
+                    .or().like(House::getOwnerPhone, keyword));
+        }
+        IPage<House> result = houseService.page(page, wrapper);
+        return Result.success(result);
     }
     
     /**
@@ -57,6 +72,19 @@ public class HouseController {
         return Result.success(houses);
     }
     
+    /**
+     * 根据业主用户ID获取关联房屋
+     */
+    @GetMapping("/owner-id/{ownerId}")
+    public Result<House> getHouseByOwnerId(@PathVariable Long ownerId) {
+        House house = houseService.getHouseByOwnerId(ownerId);
+        if (house != null) {
+            return Result.success(house);
+        } else {
+            return Result.success(null);
+        }
+    }
+
     /**
      * 根据ID获取房屋详情
      */

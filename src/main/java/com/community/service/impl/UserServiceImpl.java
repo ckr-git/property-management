@@ -35,13 +35,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (getUserByUsername(user.getUsername()) != null) {
             return false;
         }
-        
+
+        // 强制设置为普通业主，防止通过注册接口创建管理员
+        user.setUserType(1);
+        user.setStatus(0);
         // 加密密码
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
-        user.setStatus(0); // 默认正常状态
-        
+
         return save(user);
     }
 
@@ -50,5 +52,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", username);
         return getOne(queryWrapper);
+    }
+
+    @Override
+    public boolean changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = getById(userId);
+        if (user == null) {
+            return false;
+        }
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return false;
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdateTime(LocalDateTime.now());
+        return updateById(user);
     }
 }

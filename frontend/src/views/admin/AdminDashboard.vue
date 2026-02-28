@@ -148,12 +148,21 @@
           <!-- 公告管理 -->
           <div v-else-if="activeMenu === 'notices'" class="notices-management">
             <div class="toolbar">
+              <el-form :inline="true" class="search-form">
+                <el-form-item>
+                  <el-input v-model="noticeQuery.keyword" placeholder="搜索公告" clearable @keyup.enter="loadNotices" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadNotices">搜索</el-button>
+                  <el-button @click="noticeQuery.keyword = ''; noticeQuery.pageNum = 1; loadNotices()">重置</el-button>
+                </el-form-item>
+              </el-form>
               <el-button type="primary" @click="showNoticeDialog = true">
                 <el-icon><Plus /></el-icon>
                 发布公告
               </el-button>
             </div>
-            
+
             <el-table :data="notices" style="width: 100%">
               <el-table-column prop="title" label="标题" />
               <el-table-column prop="type" label="类型" width="100">
@@ -162,7 +171,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="publisherName" label="发布人" width="100" />
-              <el-table-column prop="isTop" label="置顶" width="80">
+              <el-table-column label="置顶" width="80">
                 <template #default="{ row }">
                   <el-tag v-if="row.isTop" type="danger" size="small">置顶</el-tag>
                 </template>
@@ -179,14 +188,24 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="noticeQuery.pageNum"
+              v-model:page-size="noticeQuery.pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next"
+              :total="noticeTotal"
+              @size-change="loadNotices"
+              @current-change="loadNotices"
+              style="margin-top: 15px;"
+            />
 
             <!-- 发布公告对话框 -->
-            <el-dialog v-model="showNoticeDialog" title="发布公告" width="600px">
-              <el-form :model="noticeForm" label-width="80px">
-                <el-form-item label="标题">
+            <el-dialog v-model="showNoticeDialog" :title="editingNoticeId ? '编辑公告' : '发布公告'" width="600px" @close="resetNoticeForm">
+              <el-form :model="noticeForm" :rules="noticeRules" ref="noticeFormRef" label-width="80px">
+                <el-form-item label="标题" prop="title">
                   <el-input v-model="noticeForm.title" />
                 </el-form-item>
-                <el-form-item label="类型">
+                <el-form-item label="类型" prop="type">
                   <el-select v-model="noticeForm.type">
                     <el-option label="通知公告" :value="1" />
                     <el-option label="停水停电" :value="2" />
@@ -194,7 +213,7 @@
                     <el-option label="温馨提示" :value="4" />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="内容">
+                <el-form-item label="内容" prop="content">
                   <el-input v-model="noticeForm.content" type="textarea" rows="5" />
                 </el-form-item>
                 <el-form-item label="置顶">
@@ -203,7 +222,7 @@
               </el-form>
               <template #footer>
                 <el-button @click="showNoticeDialog = false">取消</el-button>
-                <el-button type="primary" @click="publishNotice">发布</el-button>
+                <el-button type="primary" @click="publishNotice">{{ editingNoticeId ? '保存' : '发布' }}</el-button>
               </template>
             </el-dialog>
           </div>
@@ -211,8 +230,15 @@
           <!-- 用户管理 -->
           <div v-else-if="activeMenu === 'users'" class="users-management">
             <div class="toolbar">
-              <el-input v-model="userSearch" placeholder="搜索用户" style="width: 200px" />
-              <el-button type="primary" @click="loadUsers">搜索</el-button>
+              <el-form :inline="true" class="search-form">
+                <el-form-item>
+                  <el-input v-model="userQuery.keyword" placeholder="搜索用户名/姓名/电话" clearable @keyup.enter="loadUsers" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadUsers">搜索</el-button>
+                  <el-button @click="userQuery.keyword = ''; userQuery.pageNum = 1; loadUsers()">重置</el-button>
+                </el-form-item>
+              </el-form>
             </div>
             <el-table :data="users" style="width: 100%">
               <el-table-column prop="username" label="用户名" width="120" />
@@ -227,8 +253,8 @@
               </el-table-column>
               <el-table-column prop="status" label="状态" width="80">
                 <template #default="{ row }">
-                  <el-tag :type="row.status === 1 ? 'success' : 'info'">
-                    {{ row.status === 1 ? '正常' : '禁用' }}
+                  <el-tag :type="row.status === 0 ? 'success' : 'info'">
+                    {{ row.status === 0 ? '正常' : '禁用' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -238,11 +264,42 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="userQuery.pageNum"
+              v-model:page-size="userQuery.pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next"
+              :total="userTotal"
+              @size-change="loadUsers"
+              @current-change="loadUsers"
+              style="margin-top: 15px;"
+            />
+
+            <!-- 用户详情对话框 -->
+            <el-dialog v-model="viewUserDialogVisible" title="用户详情" width="500px">
+              <el-descriptions :column="1" border v-if="selectedUser">
+                <el-descriptions-item label="用户名">{{ selectedUser.username }}</el-descriptions-item>
+                <el-descriptions-item label="真实姓名">{{ selectedUser.realName }}</el-descriptions-item>
+                <el-descriptions-item label="手机号">{{ selectedUser.phone || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="身份证号">{{ selectedUser.idCard || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="角色">{{ selectedUser.userType === 0 ? '管理员' : '业主' }}</el-descriptions-item>
+                <el-descriptions-item label="状态">{{ selectedUser.status === 0 ? '正常' : '禁用' }}</el-descriptions-item>
+              </el-descriptions>
+            </el-dialog>
           </div>
 
           <!-- 房屋管理 -->
           <div v-else-if="activeMenu === 'houses'" class="houses-management">
             <div class="toolbar">
+              <el-form :inline="true" class="search-form">
+                <el-form-item>
+                  <el-input v-model="houseQuery.keyword" placeholder="搜索楼栋/房号/业主" clearable @keyup.enter="loadHouses" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadHouses">搜索</el-button>
+                  <el-button @click="houseQuery.keyword = ''; houseQuery.pageNum = 1; loadHouses()">重置</el-button>
+                </el-form-item>
+              </el-form>
               <el-button type="primary" @click="showHouseDialog = true">
                 <el-icon><Plus /></el-icon>新增房屋
               </el-button>
@@ -261,10 +318,53 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="houseQuery.pageNum"
+              v-model:page-size="houseQuery.pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next"
+              :total="houseTotal"
+              @size-change="loadHouses"
+              @current-change="loadHouses"
+              style="margin-top: 15px;"
+            />
+
+            <el-dialog v-model="showHouseDialog" :title="editingHouseId ? '编辑房屋' : '新增房屋'" width="500px" @close="resetHouseForm">
+              <el-form :model="houseForm" :rules="houseRules" ref="houseFormRef" label-width="80px">
+                <el-form-item label="楼栋" prop="buildingNo"><el-input v-model="houseForm.buildingNo" /></el-form-item>
+                <el-form-item label="单元" prop="unitNo"><el-input v-model="houseForm.unitNo" /></el-form-item>
+                <el-form-item label="房号" prop="roomNo"><el-input v-model="houseForm.roomNo" /></el-form-item>
+                <el-form-item label="面积(㎡)" prop="area"><el-input v-model.number="houseForm.area" /></el-form-item>
+                <el-form-item label="业主"><el-input v-model="houseForm.ownerName" /></el-form-item>
+                <el-form-item label="电话"><el-input v-model="houseForm.ownerPhone" /></el-form-item>
+              </el-form>
+              <template #footer>
+                <el-button @click="showHouseDialog = false">取消</el-button>
+                <el-button type="primary" @click="saveHouse">保存</el-button>
+              </template>
+            </el-dialog>
           </div>
 
           <!-- 报修管理 -->
           <div v-else-if="activeMenu === 'repairs'" class="repairs-management">
+            <div class="toolbar">
+              <el-form :inline="true" class="search-form">
+                <el-form-item>
+                  <el-input v-model="repairQuery.keyword" placeholder="搜索申请人/描述" clearable @keyup.enter="loadRepairs" />
+                </el-form-item>
+                <el-form-item>
+                  <el-select v-model="repairQuery.status" placeholder="状态" clearable>
+                    <el-option label="待处理" :value="0" />
+                    <el-option label="处理中" :value="1" />
+                    <el-option label="已完成" :value="2" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadRepairs">搜索</el-button>
+                  <el-button @click="repairQuery.keyword = ''; repairQuery.status = null; repairQuery.pageNum = 1; loadRepairs()">重置</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
             <el-table :data="repairs" style="width: 100%">
               <el-table-column prop="applicantName" label="申请人" width="100" />
               <el-table-column prop="applicantPhone" label="电话" width="130" />
@@ -283,10 +383,43 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="repairQuery.pageNum"
+              v-model:page-size="repairQuery.pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next"
+              :total="repairTotal"
+              @size-change="loadRepairs"
+              @current-change="loadRepairs"
+              style="margin-top: 15px;"
+            />
           </div>
 
           <!-- 缴费管理 -->
           <div v-else-if="activeMenu === 'payments'" class="payments-management">
+            <div class="toolbar">
+              <el-form :inline="true" class="search-form">
+                <el-form-item>
+                  <el-select v-model="paymentQuery.status" placeholder="缴费状态" clearable>
+                    <el-option label="未缴" :value="0" />
+                    <el-option label="已缴" :value="1" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-select v-model="paymentQuery.paymentType" placeholder="费用类型" clearable>
+                    <el-option label="物业费" :value="1" />
+                    <el-option label="停车费" :value="2" />
+                    <el-option label="水费" :value="3" />
+                    <el-option label="电费" :value="4" />
+                    <el-option label="燃气费" :value="5" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadPayments">搜索</el-button>
+                  <el-button @click="paymentQuery.status = null; paymentQuery.paymentType = null; paymentQuery.pageNum = 1; loadPayments()">重置</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
             <el-table :data="payments" style="width: 100%">
               <el-table-column prop="paymentMonth" label="月份" width="100" />
               <el-table-column prop="paymentType" label="类型" width="100">
@@ -304,6 +437,16 @@
                 </template>
               </el-table-column>
             </el-table>
+            <el-pagination
+              v-model:current-page="paymentQuery.pageNum"
+              v-model:page-size="paymentQuery.pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next"
+              :total="paymentTotal"
+              @size-change="loadPayments"
+              @current-change="loadPayments"
+              style="margin-top: 15px;"
+            />
           </div>
 
           <div v-else class="coming-soon">
@@ -320,64 +463,71 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Monitor, User, House, Bell, Money, Tools, Plus
+import {
+  Monitor, User, House, Bell, Money, Tools, Plus, Search
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 export default {
   name: 'AdminDashboard',
   components: {
-    Monitor, User, House, Bell, Money, Tools, Plus
+    Monitor, User, House, Bell, Money, Tools, Plus, Search
   },
   setup() {
     const router = useRouter()
     const activeMenu = ref('home')
     const user = ref(JSON.parse(localStorage.getItem('user')))
     const notices = ref([])
-    const recentRepairs = ref([
-      { applicantName: '张先生', description: '水龙头漏水', status: 0 },
-      { applicantName: '李女士', description: '电梯故障', status: 1 },
-      { applicantName: '王先生', description: '门锁损坏', status: 2 }
-    ])
+    const recentRepairs = ref([])
     const showNoticeDialog = ref(false)
+    const noticeFormRef = ref(null)
     const users = ref([])
     const houses = ref([])
     const repairs = ref([])
     const payments = ref([])
-    const userSearch = ref('')
+    const viewUserDialogVisible = ref(false)
+    const selectedUser = ref(null)
     const showHouseDialog = ref(false)
-    const stats = reactive({
-      userCount: 0,
-      houseCount: 0,
-      monthIncome: '0',
-      pendingRepairs: 0
-    })
-    
+    const houseFormRef = ref(null)
+    const editingHouseId = ref(null)
+    const houseForm = reactive({ buildingNo: '', unitNo: '', roomNo: '', area: '', ownerName: '', ownerPhone: '' })
+    const stats = reactive({ userCount: 0, houseCount: 0, monthIncome: '0', pendingRepairs: 0 })
+
+    // Pagination query objects
+    const userQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '' })
+    const userTotal = ref(0)
+    const houseQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '' })
+    const houseTotal = ref(0)
+    const noticeQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '' })
+    const noticeTotal = ref(0)
+    const repairQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: null })
+    const repairTotal = ref(0)
+    const paymentQuery = reactive({ pageNum: 1, pageSize: 10, status: null, paymentType: null })
+    const paymentTotal = ref(0)
+
+    // Form validation rules
+    const houseRules = {
+      buildingNo: [{ required: true, message: '请输入楼栋号', trigger: 'blur' }],
+      roomNo: [{ required: true, message: '请输入房号', trigger: 'blur' }],
+      area: [{ required: true, message: '请输入面积', trigger: 'blur' }]
+    }
+    const noticeRules = {
+      title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
+      content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }],
+      type: [{ required: true, message: '请选择公告类型', trigger: 'change' }]
+    }
+
     const noticeForm = reactive({
-      title: '',
-      content: '',
-      type: 1,
-      isTop: 0,
-      publisherId: user.value?.id,
-      publisherName: user.value?.realName
+      title: '', content: '', type: 1, isTop: 0,
+      publisherId: user.value?.id, publisherName: user.value?.realName
     })
 
     const getPageTitle = () => {
-      const titles = {
-        home: '仪表板',
-        users: '用户管理',
-        houses: '房屋管理',
-        notices: '公告管理',
-        payments: '缴费管理',
-        repairs: '报修管理'
-      }
+      const titles = { home: '仪表板', users: '用户管理', houses: '房屋管理', notices: '公告管理', payments: '缴费管理', repairs: '报修管理' }
       return titles[activeMenu.value] || '仪表板'
     }
 
-    const handleMenuSelect = (index) => {
-      activeMenu.value = index
-    }
+    const handleMenuSelect = (index) => { activeMenu.value = index }
 
     const logout = () => {
       localStorage.removeItem('user')
@@ -387,52 +537,57 @@ export default {
 
     const loadNotices = async () => {
       try {
-        const response = await axios.get('/api/notice/list')
+        const response = await axios.get('/api/notice/list', { params: noticeQuery })
         if (response.data.code === 200) {
-          notices.value = response.data.data
+          const data = response.data.data
+          notices.value = data.records || data
+          noticeTotal.value = data.total || 0
         }
       } catch (error) {
         console.error('获取公告失败:', error)
       }
     }
 
+    const editingNoticeId = ref(null)
+
+    const resetNoticeForm = () => {
+      editingNoticeId.value = null
+      Object.assign(noticeForm, { title: '', content: '', type: 1, isTop: 0, publisherId: user.value?.id, publisherName: user.value?.realName })
+    }
+
     const publishNotice = async () => {
+      if (noticeFormRef.value) {
+        try { await noticeFormRef.value.validate() } catch { return }
+      }
       try {
-        const response = await axios.post('/api/notice/publish', noticeForm)
+        let response
+        if (editingNoticeId.value) {
+          response = await axios.put(`/api/notice/${editingNoticeId.value}`, noticeForm)
+        } else {
+          response = await axios.post('/api/notice/publish', noticeForm)
+        }
         if (response.data.code === 200) {
-          ElMessage.success('发布成功')
+          ElMessage.success(editingNoticeId.value ? '更新成功' : '发布成功')
           showNoticeDialog.value = false
-          // 重置表单
-          Object.assign(noticeForm, {
-            title: '',
-            content: '',
-            type: 1,
-            isTop: 0,
-            publisherId: user.value?.id,
-            publisherName: user.value?.realName
-          })
+          resetNoticeForm()
           await loadNotices()
         } else {
           ElMessage.error(response.data.message)
         }
       } catch (error) {
-        ElMessage.error('发布失败')
+        ElMessage.error(editingNoticeId.value ? '更新失败' : '发布失败')
       }
     }
 
     const editNotice = (notice) => {
-      // 编辑公告功能
-      ElMessage.info('编辑功能开发中')
+      editingNoticeId.value = notice.id
+      Object.assign(noticeForm, { title: notice.title, content: notice.content, type: notice.type, isTop: notice.isTop || 0, publisherId: user.value?.id, publisherName: user.value?.realName })
+      showNoticeDialog.value = true
     }
 
     const deleteNotice = async (id) => {
       try {
-        await ElMessageBox.confirm('确定要删除这条公告吗？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-        })
-        
+        await ElMessageBox.confirm('确定要删除这条公告吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
         const response = await axios.delete(`/api/notice/${id}`)
         if (response.data.code === 200) {
           ElMessage.success('删除成功')
@@ -441,41 +596,23 @@ export default {
           ElMessage.error(response.data.message)
         }
       } catch (error) {
-        if (error !== 'cancel') {
-          ElMessage.error('删除失败')
-        }
+        if (error !== 'cancel') ElMessage.error('删除失败')
       }
     }
 
-    const getStatusType = (status) => {
-      const types = { 0: 'danger', 1: 'warning', 2: 'success' }
-      return types[status] || ''
-    }
-
-    const getStatusText = (status) => {
-      const texts = { 0: '待处理', 1: '处理中', 2: '已完成' }
-      return texts[status] || '未知'
-    }
-
-    const getNoticeTypeText = (type) => {
-      const types = { 1: '通知公告', 2: '停水停电', 3: '活动通知', 4: '温馨提示' }
-      return types[type] || '其他'
-    }
-
-    const formatTime = (timeStr) => {
-      return new Date(timeStr).toLocaleString()
-    }
-
-    const getPaymentTypeText = (type) => {
-      const types = { 1: '物业费', 2: '停车费', 3: '水费', 4: '电费', 5: '燃气费' }
-      return types[type] || '其他'
-    }
+    const getStatusType = (status) => ({ 0: 'danger', 1: 'warning', 2: 'success' }[status] || '')
+    const getStatusText = (status) => ({ 0: '待处理', 1: '处理中', 2: '已完成' }[status] || '未知')
+    const getNoticeTypeText = (type) => ({ 1: '通知公告', 2: '停水停电', 3: '活动通知', 4: '温馨提示' }[type] || '其他')
+    const formatTime = (timeStr) => new Date(timeStr).toLocaleString()
+    const getPaymentTypeText = (type) => ({ 1: '物业费', 2: '停车费', 3: '水费', 4: '电费', 5: '燃气费' }[type] || '其他')
 
     const loadUsers = async () => {
       try {
-        const response = await axios.get('/api/user/list')
+        const response = await axios.get('/api/user/list', { params: userQuery })
         if (response.data.code === 200) {
-          users.value = response.data.data
+          const data = response.data.data
+          users.value = data.records || data
+          userTotal.value = data.total || 0
         }
       } catch (error) {
         console.error('获取用户失败:', error)
@@ -484,9 +621,11 @@ export default {
 
     const loadHouses = async () => {
       try {
-        const response = await axios.get('/api/house/list')
+        const response = await axios.get('/api/house/list', { params: houseQuery })
         if (response.data.code === 200) {
-          houses.value = response.data.data
+          const data = response.data.data
+          houses.value = data.records || data
+          houseTotal.value = data.total || 0
         }
       } catch (error) {
         console.error('获取房屋失败:', error)
@@ -495,9 +634,14 @@ export default {
 
     const loadRepairs = async () => {
       try {
-        const response = await axios.get('/api/repair/list')
+        const params = { ...repairQuery }
+        if (params.status === null) delete params.status
+        const response = await axios.get('/api/repair/list', { params })
         if (response.data.code === 200) {
-          repairs.value = response.data.data
+          const data = response.data.data
+          repairs.value = data.records || data
+          repairTotal.value = data.total || 0
+          recentRepairs.value = (data.records || data).slice(0, 5)
         }
       } catch (error) {
         console.error('获取报修失败:', error)
@@ -506,9 +650,14 @@ export default {
 
     const loadPayments = async () => {
       try {
-        const response = await axios.get('/api/payment/list')
+        const params = { ...paymentQuery }
+        if (params.status === null) delete params.status
+        if (params.paymentType === null) delete params.paymentType
+        const response = await axios.get('/api/payment/list', { params })
         if (response.data.code === 200) {
-          payments.value = response.data.data
+          const data = response.data.data
+          payments.value = data.records || data
+          paymentTotal.value = data.total || 0
         }
       } catch (error) {
         console.error('获取缴费失败:', error)
@@ -516,11 +665,43 @@ export default {
     }
 
     const viewUser = (row) => {
-      ElMessage.info(`查看用户: ${row.realName}`)
+      selectedUser.value = { ...row }
+      viewUserDialogVisible.value = true
     }
 
     const editHouse = (row) => {
-      ElMessage.info(`编辑房屋: ${row.buildingNo}-${row.unitNo}-${row.roomNo}`)
+      editingHouseId.value = row.id
+      Object.assign(houseForm, { buildingNo: row.buildingNo, unitNo: row.unitNo, roomNo: row.roomNo, area: row.area, ownerName: row.ownerName, ownerPhone: row.ownerPhone })
+      showHouseDialog.value = true
+    }
+
+    const resetHouseForm = () => {
+      editingHouseId.value = null
+      Object.assign(houseForm, { buildingNo: '', unitNo: '', roomNo: '', area: '', ownerName: '', ownerPhone: '' })
+    }
+
+    const saveHouse = async () => {
+      if (houseFormRef.value) {
+        try { await houseFormRef.value.validate() } catch { return }
+      }
+      try {
+        let response
+        if (editingHouseId.value) {
+          response = await axios.put(`/api/house/${editingHouseId.value}`, houseForm)
+        } else {
+          response = await axios.post('/api/house/add', houseForm)
+        }
+        if (response.data.code === 200) {
+          ElMessage.success(editingHouseId.value ? '更新成功' : '添加成功')
+          showHouseDialog.value = false
+          resetHouseForm()
+          await loadHouses()
+        } else {
+          ElMessage.error(response.data.message)
+        }
+      } catch (error) {
+        ElMessage.error('操作失败')
+      }
     }
 
     const deleteHouse = async (id) => {
@@ -536,11 +717,7 @@ export default {
 
     const handleRepair = async (row) => {
       try {
-        await axios.put(`/api/repair/${row.id}/handle`, {
-          handlerId: user.value.id,
-          handlerName: user.value.realName,
-          remark: '已开始处理'
-        })
+        await axios.put(`/api/repair/${row.id}/handle`, { handlerId: user.value.id, handlerName: user.value.realName, remark: '已开始处理' })
         ElMessage.success('已开始处理')
         await loadRepairs()
       } catch (error) {
@@ -558,144 +735,69 @@ export default {
       }
     }
 
+    const loadStats = async () => {
+      try {
+        const [u, h, r, p] = await Promise.all([
+          axios.get('/api/user/list', { params: { pageNum: 1, pageSize: 1 } }),
+          axios.get('/api/house/list', { params: { pageNum: 1, pageSize: 1 } }),
+          axios.get('/api/repair/list', { params: { pageNum: 1, pageSize: 1, status: 0 } }),
+          axios.get('/api/payment/list', { params: { pageNum: 1, pageSize: 1000, status: 1 } })
+        ])
+        if (u.data.code === 200) stats.userCount = u.data.data.total || 0
+        if (h.data.code === 200) stats.houseCount = h.data.data.total || 0
+        if (r.data.code === 200) stats.pendingRepairs = r.data.data.total || 0
+        if (p.data.code === 200) {
+          const paid = p.data.data.records || []
+          stats.monthIncome = paid.reduce((s, i) => s + (i.actualPayAmount || 0), 0).toFixed(2)
+        }
+      } catch (e) { console.error('加载统计失败:', e) }
+    }
+
     onMounted(() => {
       loadNotices()
+      loadUsers()
       loadHouses()
       loadRepairs()
       loadPayments()
+      loadStats()
     })
 
     return {
-      activeMenu,
-      user,
-      notices,
-      recentRepairs,
-      showNoticeDialog,
-      noticeForm,
-      users,
-      houses,
-      repairs,
-      payments,
-      userSearch,
-      showHouseDialog,
-      stats,
-      getPageTitle,
-      handleMenuSelect,
-      logout,
-      publishNotice,
-      editNotice,
-      deleteNotice,
-      getStatusType,
-      getStatusText,
-      getNoticeTypeText,
-      getPaymentTypeText,
-      formatTime,
-      loadUsers,
-      loadHouses,
-      loadRepairs,
-      loadPayments,
-      viewUser,
-      editHouse,
-      deleteHouse,
-      handleRepair,
-      completeRepair
+      activeMenu, user, notices, recentRepairs, showNoticeDialog, noticeFormRef, noticeForm, noticeRules,
+      users, houses, repairs, payments, showHouseDialog, houseFormRef, stats,
+      userQuery, userTotal, houseQuery, houseTotal, noticeQuery, noticeTotal,
+      repairQuery, repairTotal, paymentQuery, paymentTotal,
+      houseRules,
+      getPageTitle, handleMenuSelect, logout,
+      publishNotice, editNotice, editingNoticeId, resetNoticeForm, deleteNotice,
+      getStatusType, getStatusText, getNoticeTypeText, getPaymentTypeText, formatTime,
+      loadUsers, loadHouses, loadRepairs, loadPayments, loadNotices, loadStats,
+      viewUser, viewUserDialogVisible, selectedUser,
+      editHouse, editingHouseId, houseForm, resetHouseForm, saveHouse, deleteHouse,
+      handleRepair, completeRepair
     }
   }
 }
 </script>
 
 <style scoped>
-.admin-dashboard {
-  height: 100vh;
-}
-
-.layout-container {
-  height: 100%;
-}
-
-.sidebar {
-  background: #001529;
-  color: white;
-}
-
-.logo {
-  padding: 20px;
-  text-align: center;
-  border-bottom: 1px solid #2c3e50;
-}
-
-.logo h3 {
-  margin: 0;
-  color: white;
-}
-
-.sidebar-menu {
-  border: none;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: white;
-  border-bottom: 1px solid #e8e8e8;
-  padding: 0 20px;
-}
-
-.header-left h2 {
-  margin: 0;
-  color: #303133;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.main-content {
-  background: #f5f5f5;
-}
-
-.stat-card .el-card__body {
-  display: flex;
-  align-items: center;
-  padding: 15px;
-}
-
-.stat-icon {
-  margin-right: 15px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.stat-label {
-  color: #606266;
-  font-size: 14px;
-}
-
-.quick-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.quick-actions .el-button {
-  justify-self: stretch;
-}
-
-.toolbar {
-  margin-bottom: 20px;
-}
-
-.coming-soon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 400px;
-}
+.admin-dashboard { height: 100vh; }
+.layout-container { height: 100%; }
+.sidebar { background: #001529; color: white; }
+.logo { padding: 20px; text-align: center; border-bottom: 1px solid #2c3e50; }
+.logo h3 { margin: 0; color: white; }
+.sidebar-menu { border: none; }
+.header { display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid #e8e8e8; padding: 0 20px; }
+.header-left h2 { margin: 0; color: #303133; }
+.header-right { display: flex; align-items: center; gap: 15px; }
+.main-content { background: #f5f5f5; }
+.stat-card .el-card__body { display: flex; align-items: center; padding: 15px; }
+.stat-icon { margin-right: 15px; }
+.stat-value { font-size: 24px; font-weight: bold; color: #303133; }
+.stat-label { color: #606266; font-size: 14px; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quick-actions .el-button { justify-self: stretch; }
+.toolbar { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+.search-form { display: inline-flex; }
+.coming-soon { display: flex; justify-content: center; align-items: center; height: 400px; }
 </style>

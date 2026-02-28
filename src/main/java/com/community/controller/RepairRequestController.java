@@ -1,13 +1,18 @@
 package com.community.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.common.Result;
 import com.community.entity.RepairRequest;
 import com.community.service.RepairRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 报修申请控制器
@@ -26,9 +31,23 @@ public class RepairRequestController {
      * 获取所有报修申请列表（管理员功能）
      */
     @GetMapping("/list")
-    public Result<List<RepairRequest>> getRepairList() {
-        List<RepairRequest> repairs = repairRequestService.list();
-        return Result.success(repairs);
+    public Result<IPage<RepairRequest>> getRepairList(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer status) {
+        Page<RepairRequest> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<RepairRequest> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(RepairRequest::getApplicantName, keyword)
+                    .or().like(RepairRequest::getDescription, keyword));
+        }
+        if (status != null) {
+            wrapper.eq(RepairRequest::getStatus, status);
+        }
+        wrapper.orderByDesc(RepairRequest::getCreateTime);
+        IPage<RepairRequest> result = repairRequestService.page(page, wrapper);
+        return Result.success(result);
     }
     
     /**
@@ -85,10 +104,10 @@ public class RepairRequestController {
     @PutMapping("/{id}/handle")
     public Result<String> handleRepair(
             @PathVariable Long id,
-            @RequestParam Long handlerId,
-            @RequestParam String handlerName,
-            @RequestParam String remark) {
-        
+            @RequestBody Map<String, Object> params) {
+        Long handlerId = Long.valueOf(params.get("handlerId").toString());
+        String handlerName = params.get("handlerName").toString();
+        String remark = params.get("remark").toString();
         boolean success = repairRequestService.handleRepairRequest(id, handlerId, handlerName, remark);
         if (success) {
             return Result.success("处理成功");
@@ -101,7 +120,8 @@ public class RepairRequestController {
      * 完成报修申请（管理员功能）
      */
     @PutMapping("/{id}/complete")
-    public Result<String> completeRepair(@PathVariable Long id, @RequestParam String remark) {
+    public Result<String> completeRepair(@PathVariable Long id, @RequestBody Map<String, Object> params) {
+        String remark = params.get("remark").toString();
         boolean success = repairRequestService.completeRepairRequest(id, remark);
         if (success) {
             return Result.success("完成成功");

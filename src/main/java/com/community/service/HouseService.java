@@ -31,5 +31,12 @@ public interface HouseService extends IService<House> {
      * @return 空置房屋列表
      */
     List<House> getVacantHouses();
-    
+
+    /**
+     * 根据业主用户ID获取关联房屋
+     * @param ownerId 业主用户ID
+     * @return 房屋信息
+     */
+    House getHouseByOwnerId(Long ownerId);
+
 }

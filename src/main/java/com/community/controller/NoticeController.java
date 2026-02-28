@@ -1,9 +1,13 @@
 package com.community.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.common.Result;
 import com.community.entity.Notice;
 import com.community.service.NoticeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,9 +29,20 @@ public class NoticeController {
      * 获取所有已发布公告
      */
     @GetMapping("/list")
-    public Result<List<Notice>> getNoticeList() {
-        List<Notice> notices = noticeService.getPublishedNotices();
-        return Result.success(notices);
+    public Result<IPage<Notice>> getNoticeList(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword) {
+        Page<Notice> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Notice> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Notice::getStatus, 1); // 只查已发布
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Notice::getTitle, keyword)
+                    .or().like(Notice::getContent, keyword));
+        }
+        wrapper.orderByDesc(Notice::getIsTop).orderByDesc(Notice::getCreateTime);
+        IPage<Notice> result = noticeService.page(page, wrapper);
+        return Result.success(result);
     }
     
     /**

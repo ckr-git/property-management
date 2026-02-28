@@ -112,9 +112,10 @@ export default {
 
     const loadNotices = async () => {
       try {
-        const response = await axios.get('/api/notice/list')
+        const response = await axios.get('/api/notice/list', { params: { pageNum: 1, pageSize: 5 } })
         if (response.data.code === 200) {
-          notices.value = response.data.data.slice(0, 5) // 只显示前5条
+          const data = response.data.data
+          notices.value = data.records || data
         }
       } catch (error) {
         console.error('获取公告失败:', error)

@@ -111,13 +111,13 @@ INSERT INTO community_info (name, address, property_company, property_fee, parki
 VALUES ('阳光小区', '北京市朝阳区阳光大街123号', '阳光物业管理有限公司', 2.5, 200.00, '阳光小区是一个环境优美、设施完善的现代化住宅小区', '400-123-4567');
 
 -- 插入管理员用户
-INSERT INTO sys_user (username, password, real_name, phone, user_type, status) 
-VALUES ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKyZFzUWwIM5cvTAqR8vYqhF0Zuq', '系统管理员', '13800138000', 0, 0);
+INSERT INTO sys_user (username, password, real_name, phone, user_type, status)
+VALUES ('admin', '$2a$10$jKMRNsE80krKdlhvft4IRua4JmXiajljYD5XGcnYtw7KZntLC5j96', '系统管理员', '13800138000', 0, 0);
 -- 密码是：123456
 
 -- 插入测试业主用户
-INSERT INTO sys_user (username, password, real_name, phone, id_card, user_type, status) 
-VALUES ('zhangsan', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKyZFzUWwIM5cvTAqR8vYqhF0Zuq', '张三', '13901234567', '110101199001011234', 1, 0);
+INSERT INTO sys_user (username, password, real_name, phone, id_card, user_type, status)
+VALUES ('zhangsan', '$2a$10$jKMRNsE80krKdlhvft4IRua4JmXiajljYD5XGcnYtw7KZntLC5j96', '张三', '13901234567', '110101199001011234', 1, 0);
 
 -- 插入房屋信息
 INSERT INTO house_info (building_no, unit_no, room_no, area, house_type, owner_name, owner_phone, occupancy_status, status) 

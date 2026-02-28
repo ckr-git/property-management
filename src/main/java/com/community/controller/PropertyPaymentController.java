@@ -1,9 +1,13 @@
 package com.community.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.common.Result;
 import com.community.entity.PropertyPayment;
 import com.community.service.PropertyPaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -18,8 +22,26 @@ public class PropertyPaymentController {
     private PropertyPaymentService paymentService;
 
     @GetMapping("/list")
-    public Result<List<PropertyPayment>> list() {
-        return Result.success(paymentService.list());
+    public Result<IPage<PropertyPayment>> list(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer paymentType,
+            @RequestParam(required = false) String keyword) {
+        Page<PropertyPayment> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<PropertyPayment> wrapper = new LambdaQueryWrapper<>();
+        if (status != null) {
+            wrapper.eq(PropertyPayment::getStatus, status);
+        }
+        if (paymentType != null) {
+            wrapper.eq(PropertyPayment::getPaymentType, paymentType);
+        }
+        if (StringUtils.hasText(keyword)) {
+            wrapper.like(PropertyPayment::getPaymentMonth, keyword);
+        }
+        wrapper.orderByDesc(PropertyPayment::getCreateTime);
+        IPage<PropertyPayment> result = paymentService.page(page, wrapper);
+        return Result.success(result);
     }
 
     @GetMapping("/house/{houseId}")
