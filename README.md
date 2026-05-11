@@ -7,19 +7,18 @@
 ## 技术栈
 
 ### 后端
-- **Java 8+** / **Spring Boot 2.7.14**
-- **Spring Security** - 安全框架
-- **MyBatis Plus 3.5.3** - ORM 框架（含分页插件）
-- **MySQL 8.0** - 数据库
-- **Maven** - 构建工具
-- **BCrypt** - 密码加密
+- Java 8+ / Spring Boot 2.7.14
+- Spring Security
+- MyBatis Plus 3.5.3
+- MySQL 8.0
+- Maven
 
 ### 前端
-- **Vue 3** (Composition API) / **Vite 4**
-- **Element Plus** - UI 组件库
-- **Vue Router 4** - 路由管理
-- **Axios** - HTTP 客户端
-- **Pinia** - 状态管理
+- Vue 3 (Composition API) / Vite 4
+- Element Plus
+- Vue Router 4
+- Axios
+- Pinia
 
 ## 功能特性
 
@@ -30,11 +29,11 @@
 - 房屋信息查看（通过手机号自动匹配）
 - 公告通知浏览
 - 缴费记录查询与在线缴费
-- 报修申请提交（支持类型选择、表单验证）
-- 仪表板数据统计（待缴费用、报修状态、公告数量）
+- 报修申请提交
+- 仪表板数据统计
 
 ### 管理端
-- 仪表板数据概览（用户数、房屋数、收入、待处理报修）
+- 仪表板数据概览
 - 用户管理（列表、搜索、分页、查看详情）
 - 房屋信息管理（CRUD、搜索、分页、表单验证）
 - 公告发布管理（CRUD、搜索、分页、表单验证）
@@ -46,54 +45,50 @@
 ```
 小区物业管理系统/
 ├── src/main/java/com/community/
-│   ├── config/                              # 配置类（MyBatis Plus 分页等）
-│   ├── common/                              # 公共类（Result 统一返回）
-│   ├── entity/                              # 实体类
-│   ├── dto/                                 # 数据传输对象
-│   ├── mapper/                              # MyBatis 映射接口
-│   ├── service/                             # 业务逻辑层
-│   ├── controller/                          # 控制器层
-│   └── PropertyManagementApplication.java   # 启动类
+│   ├── config/
+│   ├── common/
+│   ├── entity/
+│   ├── dto/
+│   ├── mapper/
+│   ├── service/
+│   ├── controller/
+│   └── PropertyManagementApplication.java
 ├── src/main/resources/
-│   ├── application.yml                      # 配置文件
-│   └── mapper/                              # MyBatis XML 映射文件
+│   ├── application.yml
+│   └── mapper/
 ├── frontend/
 │   ├── src/
-│   │   ├── views/                           # 页面组件
-│   │   │   ├── Home.vue                     # 首页
-│   │   │   ├── Login.vue                    # 登录页
-│   │   │   ├── Register.vue                 # 注册页
-│   │   │   ├── admin/AdminDashboard.vue     # 管理端
-│   │   │   └── user/UserDashboard.vue       # 业主端
-│   │   ├── router/                          # 路由配置
-│   │   ├── App.vue                          # 根组件
-│   │   └── main.js                          # 入口文件
-│   ├── package.json                         # NPM 配置
-│   └── vite.config.js                       # Vite 配置
+│   │   ├── views/
+│   │   ├── router/
+│   │   ├── App.vue
+│   │   └── main.js
+│   ├── package.json
+│   └── vite.config.js
 ├── database/
-│   └── init.sql                             # 数据库初始化脚本
-├── pom.xml                                  # Maven 配置
+│   └── init.sql
+├── pom.xml
 └── README.md
 ```
 
-## 安装部署
+## 快速开始
 
 ### 环境要求
 - JDK 8+
-- Node.js 16+ 和 npm
-- MySQL 8.0
 - Maven 3.6+
+- Node.js 16+
+- MySQL 8.0
 
-### 1. 创建数据库
+### 启动步骤
+
+1. 初始化数据库
 
 ```bash
-mysql -u root -p
-source database/init.sql
+mysql -u root -p < database/init.sql
 ```
 
-### 2. 修改配置
+2. 修改后端配置
 
-编辑 `src/main/resources/application.yml`，修改数据库连接信息：
+编辑 `src/main/resources/application.yml`，确认数据库连接信息正确：
 
 ```yaml
 spring:
@@ -103,16 +98,15 @@ spring:
     password: your_password
 ```
 
-### 3. 启动后端
+3. 启动后端
 
 ```bash
-mvn clean compile
 mvn spring-boot:run
 ```
 
-后端服务启动在 http://localhost:8080/api
+后端地址: http://localhost:8080/api
 
-### 4. 启动前端
+4. 启动前端
 
 ```bash
 cd frontend
@@ -120,9 +114,9 @@ npm install
 npm run dev
 ```
 
-前端应用启动在 http://localhost:3000
+前端地址: http://localhost:3000
 
-## 默认账户
+### 默认账户
 
 | 角色 | 用户名 | 密码 | 说明 |
 |------|--------|------|------|
@@ -187,8 +181,6 @@ npm run dev
 | `property_payment` | 物业缴费记录表 |
 | `repair_request` | 报修申请表 |
 | `community_info` | 小区信息表 |
-
-详细表结构参考 `database/init.sql`。
 
 ## 许可证
 
